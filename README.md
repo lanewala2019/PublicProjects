@@ -31,6 +31,5 @@ bit arranged in an appropriate grid.
 
 Hope you enjoy.
 
-sheet
 
 
