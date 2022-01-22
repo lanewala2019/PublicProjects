@@ -1,0 +1,112 @@
+{% extends "layout.html" %}
+
+{% block title %}Banner{% endblock %}
+
+{% block body %}
+
+
+<div class="banner">
+    <h1>Run Banner Page</h1>
+    <div class="hdrmessage">
+        Here you can cause specific banners to be rendered using a grid of individually-addressable LEDs.
+        A separate program actually manages the interaction and control with the LEDs. DOing so allows one
+        to control the lights at a terminal or through this web interface.
+        <br>
+        <br>
+        Banner files are simply the text that is to be rendered. These can have one or more phrases, with
+        colors specified. Once created, these files are stored on the server, and rendered here. Each phrase
+        has a foreground and background color associated with it. The color is specified as G,R,B (with
+        each fragment a number between 0 and 255). The higher the values, the brighter the LED will be.
+        <br>
+        <br>
+        <br>
+        Use the <img src="{{ url_for('static', filename='images/icons8-running-rabbit-24.png') }}"> to run a
+        banner
+        <br>
+        <br>
+        Use the <img src="{{ url_for('static', filename='images/Actions-process-stop-icon.png') }}"> to stop the
+        banner from running. <br>
+        <br>
+        Banners will run forever, until explicitly stopped by clicking on the "stop" icon on the relevant
+        row. Once a banner is "run", it cannot be run again until it is first stopped.
+        <div class="warn">
+            WARNING: Running more than one banner at the same time will cause unpredictable results
+            in the LEDs and potentially damage the circuitry that controls each LED. There is no defense as yet
+            against
+            preventing multiple users from simultaneously running the same or different banners...
+        </div>
+    </div>
+</div>
+<p>
+
+</p>
+<div class="styled-table">
+    <table class="styled-table">
+        <thead>
+            <tr>
+                <th>
+                    Filename
+                </th>
+                <th width="75%">
+                    Contents
+                </th>
+                <th>
+                    Pid
+                </th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for content in filesContent %}
+            <tr>
+                <td>
+                    <div>
+                        {{ content[2] }}
+                    </div>
+                </td>
+                <td>
+                    <div class="scrolltd">
+                        {% autoescape false %}
+                        {{ content[3] }}
+                        {% endautoescape %}
+                    </div>
+                </td>
+                <td>
+                    <div>
+                        {{ content[1] }}
+                    </div>
+                </td>
+                <td>
+                    <div>
+                        &nbsp;<a id="{{ content[2] }}" href="/runBanner/{{ content[2] }}"><img
+                                src="{{ url_for('static', filename='images/icons8-running-rabbit-24.png') }}"
+                                alt="run"></a>&nbsp;
+                    </div>
+                </td>
+                <td>
+                    <div>
+                        &nbsp;<a id="{{ content[2] }}" href="/stopBanner/{{ content[1] }}"><img
+                                src="{{ url_for('static', filename='images/Actions-process-stop-icon.png') }}"
+                                alt="stop"></a>&nbsp;
+                    </div>
+                </td>
+                <td width="25%">
+                    <!-- content[0] is the style element to turn visibility on/off (done in webAppUtils.py) -->
+                    <div id="vid{{ content[2] }}" {{ content[0] }}>
+                        <!-- REPLACE CHANNEL WITH YOUR OWN YOUTUBE CHANNEL ID -->
+                        <iframe width="170" height="96"
+                            src="https://www.youtube.com/embed/live_stream?channel=<CHANNEL_ID>&autoplay=1"
+                            title="YouTube video player" frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media;" allowfullscreen></iframe>
+                    </div>
+                </td>
+            </tr>
+
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

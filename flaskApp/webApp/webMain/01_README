@@ -1,0 +1,18 @@
+
+The set of files needed:
+
+resources:
+    -> banner/* (all files are those that contain the scrolling text specs)
+static:
+    -> css
+    -> images
+templates:
+    -> about.html
+    -> banner.html
+    -> contact.html
+    -> create.html
+    -> home.html
+    -> layout.html
+banners.py - main script to execute
+common.py  - a few common declarations used in all other scripts
+webAppUtils.py - a few utility functions

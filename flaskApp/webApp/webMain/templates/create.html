@@ -1,0 +1,245 @@
+{% extends "layout.html" %}
+
+{% block head %}
+{{ super() }}
+<script type="text/javascript">
+    // "tblHdr" is used to generate the desired table dynamically. We use the size
+    // of "tblHdr" to determine the number of table columns needed.
+    var tblHdr = new Array();
+    tblHdr = [' ', 'Banner Text', 'Banner Text Color', 'Banner Brightness', 'Background Color', 'Background Brightness'];
+
+    // add a new to the TABLE. This creates yet another table row appropriately
+    // populated with columns for input and action. Two columns are configured
+    // as input type "color" so as to render a colorpicker.
+    function addRow() {
+        //console.log("============ addRow() =============");
+        var txtTbl = document.getElementById('txtTbl');
+
+        var rowCnt = txtTbl.rows.length;   // table row count.
+        var tr = txtTbl.insertRow(rowCnt); // the table row.
+        tr.setAttribute('class', 'styled-table');
+
+        for (var c = 0; c < tblHdr.length; c++) {
+            var td = document.createElement('td'); // table definition.
+            td = tr.insertCell(c);
+
+            if (c == 0) {      // the first column.
+                // add a button in every new row in the first column.
+                var button = document.createElement('input');
+
+                // set input attributes.
+                button.setAttribute('type', 'button');
+                button.setAttribute('value', 'Remove');
+                button.setAttribute('class', 'btn btn-info');
+
+                // add button's 'onclick' event.
+                button.setAttribute('onclick', 'removeRow(this)');
+                td.appendChild(button);
+            } else if (c == 1) { // banner text
+                var ele = document.createElement('input');
+                ele.setAttribute('type', 'text');
+                ele.setAttribute('style', 'border:none');
+                ele.setAttribute('style', 'width: 100%');
+                td.appendChild(ele);
+            } else if (c == 2) {  // text color
+                var ele = document.createElement('input');
+                ele.setAttribute('type', 'color');
+                ele.setAttribute('value', '#ffffff');
+                ele.setAttribute('style', 'width: 100%');
+                ele.setAttribute('title', 'Click in box to display a color-picker');
+                td.appendChild(ele);
+            } else if (c == 3) {  // text led brightness
+                var ele = document.createElement('input');
+                ele.setAttribute('type', 'text');
+                ele.setAttribute('value', '0.5');
+                ele.setAttribute('style', 'width: 100%');
+                ele.setAttribute('title', 'Type a brightness value between 0.0 and 1.0');
+                td.appendChild(ele);
+            } else if (c == 4) { // background color
+                var ele = document.createElement('input');
+                ele.setAttribute('type', 'color');
+                ele.setAttribute('value', '#000000');
+                ele.setAttribute('style', 'width: 100%');
+                ele.setAttribute('title', 'Click in box to display a color-picker');
+                td.appendChild(ele);
+            } else if (c == 5) { // background led brightness
+                var ele = document.createElement('input');
+                ele.setAttribute('type', 'text');
+                ele.setAttribute('value', '0.5');
+                ele.setAttribute('style', 'width: 100%');
+                ele.setAttribute('title', 'Type a brightness value between 0.0 and 1.0');
+                td.appendChild(ele);
+            }
+        }
+    }
+
+
+    /* 
+        On submit, collect table data for back-end procesing. The "tblData" array
+        is used to configure the entered data in the form that the LED banners rendering
+        script needs it, i.e., values list separated by "|". The backend will process
+        each list as a separate set of banner text (as expected by the banner rendering
+        script).
+    */
+    function submitTbl() {
+        //console.log("================ submitTbl() =================");
+        var myTab = document.getElementById('txtTbl');
+        var tblData = new Array();
+        var output;
+
+        //console.log("sizeof txtTbl=" + myTab.rows.length);
+
+        // loop through each row of the table.
+        for (row = 1; row < myTab.rows.length; row++) {
+            for (c = 1; c < myTab.rows[row].cells.length; c++) {
+                var element = myTab.rows.item(row).cells[c];
+                //console.log("element=" + element.childNodes[0].value);
+                tblData.push(element.childNodes[0].value);
+            }
+        }
+
+        // Data to be sent to backend (generated based on table inputs); tbl col separator is "|"
+        var outd = document.getElementById('bannerContent');
+        outd.value = tblData.join("|");
+        var form = document.getElementById('form');
+        form.submit();
+        //console.log("====================================");
+    }
+
+
+    /*
+        create an empty table with a table header. An empty (first) row is added
+        upon table creation so that the form is ready to accept user input.
+    */
+    function createTable() {
+        //console.log("========= CreateTable() =============");
+        var txtTbl = document.createElement('table');
+        txtTbl.setAttribute('id', 'txtTbl');
+        txtTbl.setAttribute('class', 'myTblCls');
+        txtTbl.setAttribute('width', '100%');
+        txtTbl.setAttribute('align', 'center');
+        var tr = txtTbl.insertRow(-1);
+        for (var h = 0; h < tblHdr.length; h++) {
+            var th = document.createElement('th');
+            if (h == 0) {
+                th.setAttribute('width', '10%');
+            } else if (h == 1) {
+                th.setAttribute('width', '50%');
+            } else if (h == 2 || h == 4) {
+                th.setAttribute('width', '10%');
+            } else if (h == 3 || h == 5) {
+                th.setAttribute('width', '10%');
+            }
+            th.innerHTML = tblHdr[h];
+            tr.appendChild(th);
+        }
+        var div = document.getElementById('container');
+        div.appendChild(txtTbl);
+
+        /* add at least one row */
+        addRow();
+    }
+
+    /* 
+        delete TABLE row function. Each row in the table has a "Remove" button
+        that is used to delete unwanted rows.
+    */
+    function removeRow(oButton) {
+        var empTab = document.getElementById('txtTbl');
+        empTab.deleteRow(oButton.parentNode.parentNode.rowIndex); // button -> td -> tr.
+    }
+</script>
+
+{% endblock %}
+
+{% block title %}Create{% endblock %}
+
+{% block body %}
+
+<!--
+    This template is different than all the others being used in that I have a
+    "body onload" while the layout template just has a "body" tag. That's why there
+    is another body tag in this template. Other than that, the appropriate insertions
+    into this script using layout.html seem to work as intended.
+-->
+
+<body onload="createTable()">
+
+    <div class="create">
+        <h1>Create Banner Page</h1>
+        <div class="hdrmessage">
+            Use a form to help create a banner to be rendered using individually-addressable LEDs
+            <p>
+                Each row in the table below is a banner to be rendered. Multiple such banners
+                therefore can be used to render.
+                <br>
+                <br>
+                Text color and background color may be selected by clicking in the color box, which will
+                present a color-picker. Alternatively, you may enter values in either hex form or by selecting
+                appropriate RGB or HSV values.
+                <br>
+                <br>
+                Banners are saved to files on the server. Each file created is viewed on the "Banner"
+                page.
+            </p>
+        </div>
+    </div>
+    <p>
+
+    </p>
+
+    <div class="styled-table">
+        <form id="form" action="" method="post" enctype="application/x-www-form-urlencoded">
+            {{ form.csrf }}
+            <div class="form-group" width="80%">
+                <div id="container">
+                    <!-- an empty container for the dynamic table  -->
+                    <!-- dynamically created via the body onload javascript -->
+                </div>
+
+                <p></p>
+                <!-- Ths div "output" is a placeholder and not meant to be visible on page -->
+                <!-- It will be used on the backend -->
+                <input type="hidden" name="bannerContent" id="bannerContent" />
+
+                <button type="button" class="btn btn-primary" onClick="addRow()">Add a Row</button>
+                <button type="button" class="btn btn-success" onClick="submitTbl()">Update Table</button>
+            </div>
+            <p>
+                &nbsp;
+            </p>
+        </form>
+
+        <!--
+            The backend script returns messages using flash().
+        -->
+        <div class="fromBackEnd">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+
+            {% for message in messages %}
+            {% if "Error" not in message: %}
+            <div class="alert alert-info">
+                {{ message[1] }}
+            </div>
+            {% endif %}
+
+            {% if "Error" in message: %}
+            <div class="alert alert-warning">
+                {{ message[1] }}
+            </div>
+            {% endif %}
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+        </div>
+
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"
+        integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+        crossorigin="anonymous"></script>
+
+</body>
+{% endblock %}

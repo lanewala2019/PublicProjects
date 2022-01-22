@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block body %}
+<div class="home">
+    <h1>LED Banners Home Page</h1>
+    <div class="hdrmessage">
+        <p>
+            A login is required in order to create/run banners. Once logged-in, a session
+            allows you to automatically be logged-in again for a certain period of time before
+            you need to log in again. The login process is provided by Okta, an OpenId Connect
+            Provider (the use of OpenID Connect eliminates the need to store user security
+            information in this application, thus protecting you from possible exposure).
+        </p>
+        <p>
+            The LED Banners site provides one with the ability to create and run text banners.
+            New banners can be created using the "Create" link. Banners are run using the "Banner"
+            link.
+        </p>
+        <p>
+            A banner may be created with one or more phrases that will each render with a brief
+            "gap". Once a banner is created, it will be saved to a file on the server. The file
+            name is randomly generated, and at this point in time, you do not have the ability
+            to delete a file once it has been created.
+        </p>
+        <p>
+            A created banner may be "run", i.e., rendered. Text will be scrolled from right to
+            left, and once a file content is fully rendered, it will repeat until the banner is
+            stopped. ONly one banner may be run at any point (this is a limitation of the hardware).
+        </p>
+    </div>
+</div>
+{% endblock %}

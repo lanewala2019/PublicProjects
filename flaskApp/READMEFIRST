@@ -1,0 +1,21 @@
+Before running anything, you must edit several files to ensure that the proper
+configuration values have been set up.
+
+1. In webApp/webMain:
+	a. edit common.py
+		VIDEOINNERHTML: substitute <CHANNEL_ID> with your YouTube Channel ID
+		SECRETKEY: set it to any arbitrary string of letters and numbers
+		OKTADOMAIN: set it to your Okta developer domain
+		OKTAAUTHTOKEN: set it to the API Token generated for you in Okta dev portal
+
+2. In webApp/webMain/templates:
+	a. edit banner.html:
+		Replace <CHANNEL_ID> in iframe for YouTube video display
+
+
+3. In webApp/webMain:
+	a. edit client_secrets.json:
+		edit 	client_id
+			client_secret
+			all the URLs
+

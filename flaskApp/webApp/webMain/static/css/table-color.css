@@ -1,0 +1,43 @@
+.tblcolor-picker {
+    position: absolute;
+    z-index: 999999;
+    padding: 5px;
+    border: solid 1px #f3f3f3;
+    box-shadow: 2px 2px 3px #a59e9e;
+    background: #f8f8f8;
+}
+
+.tblcolor-color {
+    background: #cafef2;
+    padding: 5px;
+    border: solid 1px #73b8a8;
+    cursor: pointer;
+}
+.tblcolor-color:hover
+{
+background: #73b8a8;
+border-color: #73b8a8;
+}
+
+.tblcolor-bgcolor {
+    background: #dcd3fa;
+    padding: 5px;
+    border: solid 1px #968abe;
+    margin: 0px 5px;
+     cursor: pointer;
+}
+
+.tblcolor-bgcolor:hover
+{
+background: #968abe;
+border-color: #968abe;
+}
+
+input[type="color"] 
+{
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    margin-top: 5px;
+    border: 0;
+}
