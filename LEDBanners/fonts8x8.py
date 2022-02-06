@@ -11,7 +11,10 @@
 # - Reorganized per ASCII table, so that simple offsets can be used to
 #   get to the dot-matrix respresentation of printable characters.
 # - added comments at end of each entry to indicate the character's
-#   decimal value as well as the index into the font array
+#   decimal value as well as the index into the font array.
+#
+# Note that some of the alphanumerics do not have a defined dot-matrix
+# representation yet. These are indicated by the "**" at the end of the line.
 #
 from dataclasses import dataclass
 import numpy as np

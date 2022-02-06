@@ -81,7 +81,6 @@ def createBannerFile(fn, dtext):
 def startSubProcess(bannerFile, process):
     #print ('Start subrocess: bannerFile=[',bannerFile,"]")
     pathname = LEDLIGHT_PATH+SCROLLINGLED_PROGRAM+' -f '+ BANNER_PATH+bannerFile
-    #pathname = TMP_PATH+'child.py' # for testing puroses
     cmd = 'sudo python '+pathname
     process = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid)
     return process       
@@ -151,3 +150,45 @@ def anyOtherPidsExist(aggrContent):
         if len(content[1]) > 0:
             return (True)
     return (False)
+
+
+#
+# get files in the banners directory and build the aggregate files content list
+#
+def makeAggregateFilesContent():
+    global aggregateFilesContent
+
+    files = os.listdir(BANNER_PATH)
+    #print("banner: files=", files)
+    aggregateFilesContent = []
+
+    while files:
+        # Each "row" in the contents array represents a table row rendered in HTML.
+        # To maintain proepr state, certain bits must be preserved across the page rendering.
+        # In order to know what banner is running, its pid must be captured (note the banner
+        # process is a separate sub-process so we need to know ots pid)
+        # Further, rather than clutter up the web page, only the currently-running banner
+        # will have its video element displayed, & so we must capture that cell's visibility state
+        #
+        # After initialization, this array is passed back and forth between the HTML template and
+        # the python scripts.
+        #
+        # When a banner is "run"/"stopped", a couple of functions in webAppUtils.py are used
+        # to set/unset visibility of the video cell (via the contents[] array)
+        content = [] # the content of a specific file in a list
+        content.append("style=visibility:hidden") #initialize video cell visibility
+        content.append("") #placeholder for process pid (when running as a sub-process)
+        file = files.pop()
+        with open(BANNER_PATH+file, "r") as f:
+            txt = f.read()
+        txt = txt.replace('\n', '<br>')
+        # add filename to the list to render (without the .bannertext extension)
+        file1 = file
+        fileStr = file1[:file1.index(".bannertext")]
+        content.append(fileStr) # 3rd element in a list is the filename without the extension
+        # now append the file contents
+        content.append(txt) # gather content of a specific file
+        # finally, append this whole thing as a "row" to be rendered
+        aggregateFilesContent.append(content) # gather content of all files
+    #print("banner(): aggregateFilesContent=***",aggregateFilesContent,"***")
+    return (aggregateFilesContent)

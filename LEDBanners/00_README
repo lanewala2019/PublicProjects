@@ -1,0 +1,43 @@
+ WS2811 strand of 50 lights
+connected female end to RPi4:
+	Ground Wire at female end to GND pin on RPI4 (I used pin 39)
+	Data Wire (middle wire on female connector) to GPIO18 on RPI 4(pin 12)
+RPI4 powered by its own 5VDC power
+WS2811 powered by its own 12VDC power:
+	There are two wires hanging off the female end...
+	Per the label on the WS2811 strand, RED is +, BLUE is GND...
+	Connect 12VDC supply using appropriate polarity
+
+Test program 1:
+
+import board
+import neopixel
+from time import sleep
+# Tell neopixels using GPIO18 to control 50 lights with desired brightness
+pixels = neopixel.NeoPixel(board.D18, 50, brightness=1)
+# signal the strand to turn on green only
+pixels.fill((255,0,0))
+pixels.show()
+# Sleep for 2 seconds
+sleep(2)
+# Reset LEDs to OFF
+pixels.fill((0,0,0))
+
+
+
+Test program 2:
+
+import board
+import neopixel
+
+pixels = neopixel.NeoPixel(board.D18, 50, brightness=1)
+pixels.fill((0,0,0))
+i = 0
+j = 0
+k = 0
+for i in range (0, 255, 10):
+	for j in range (0, 255, 10):
+		for k in range (0, 255, 10):
+			pixels.fill((i,j,k))
+			pixels.show()
+pixels.fill((0,0,0))

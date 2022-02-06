@@ -394,7 +394,9 @@ def printRightPixels():
 		logger.log(logging.DEBUG, "pixels[{}]={}".format(idx, pixels[idx]))
 
 
+# ****************************************************************************************
 """ MAIN """
+# ****************************************************************************************
 def main(argv):
 	global cells, currCellsIndex, cellsUsed
 	global MAXPIXELSROW, MAXPIXELSCOL

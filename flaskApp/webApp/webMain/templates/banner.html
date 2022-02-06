@@ -19,6 +19,12 @@
         each fragment a number between 0 and 255). The higher the values, the brighter the LED will be.
         <br>
         <br>
+        Banner files may be deleted by the creator only. These are identified by the filenames, which are prefixed
+        by the creator's id. Make a note of it when creating so you can delete files that you don't need them.
+        If you are not the creator, file deletion will not be permitted. Use
+        <img src="{{ url_for('static', filename='images/trash_small.png') }}"> to delete a banner file.
+        <br>
+        <br>
         <br>
         Use the <img src="{{ url_for('static', filename='images/icons8-running-rabbit-24.png') }}"> to run a
         banner
@@ -41,72 +47,108 @@
 
 </p>
 <div class="styled-table">
-    <table class="styled-table">
-        <thead>
-            <tr>
-                <th>
-                    Filename
-                </th>
-                <th width="75%">
-                    Contents
-                </th>
-                <th>
-                    Pid
-                </th>
-                <th></th>
-                <th></th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for content in filesContent %}
-            <tr>
-                <td>
-                    <div>
-                        {{ content[2] }}
-                    </div>
-                </td>
-                <td>
-                    <div class="scrolltd">
-                        {% autoescape false %}
-                        {{ content[3] }}
-                        {% endautoescape %}
-                    </div>
-                </td>
-                <td>
-                    <div>
-                        {{ content[1] }}
-                    </div>
-                </td>
-                <td>
-                    <div>
-                        &nbsp;<a id="{{ content[2] }}" href="/runBanner/{{ content[2] }}"><img
-                                src="{{ url_for('static', filename='images/icons8-running-rabbit-24.png') }}"
-                                alt="run"></a>&nbsp;
-                    </div>
-                </td>
-                <td>
-                    <div>
-                        &nbsp;<a id="{{ content[2] }}" href="/stopBanner/{{ content[1] }}"><img
-                                src="{{ url_for('static', filename='images/Actions-process-stop-icon.png') }}"
-                                alt="stop"></a>&nbsp;
-                    </div>
-                </td>
-                <td width="25%">
-                    <!-- content[0] is the style element to turn visibility on/off (done in webAppUtils.py) -->
-                    <div id="vid{{ content[2] }}" {{ content[0] }}>
-                        <!-- REPLACE CHANNEL WITH YOUR OWN YOUTUBE CHANNEL ID -->
-                        <iframe width="170" height="96"
-                            src="https://www.youtube.com/embed/live_stream?channel=<CHANNEL_ID>&autoplay=1"
-                            title="YouTube video player" frameborder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media;" allowfullscreen></iframe>
-                    </div>
-                </td>
-            </tr>
+    <form id="form" action="" method="post" enctype="application/x-www-form-urlencoded">
+        {{ form.csrf }}
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>
+                        Banner Filename
+                    </th>
+                    <th width="75%">
+                        Banner Content
+                    </th>
+                    <th>
+                        Pid
+                    </th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for content in filesContent %}
+                <tr>
+                    <td>
+                        <div>
+                            {{ content[2] }}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="scrolltd">
+                            {% autoescape false %}
+                            {{ content[3] }}
+                            {% endautoescape %}
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            {{ content[1] }}
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            &nbsp;<a id="{{ content[2] }}" href="/runBanner/{{ content[2] }}"><img
+                                    src="{{ url_for('static', filename='images/icons8-running-rabbit-24.png') }}"
+                                    alt="run"></a>&nbsp;
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            &nbsp;<a id="{{ content[2] }}" href="/stopBanner/{{ content[1] }}"><img
+                                    src="{{ url_for('static', filename='images/Actions-process-stop-icon.png') }}"
+                                    alt="stop"></a>&nbsp;
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            &nbsp;<a id="{{ content[2] }}" href="/deleteBannerFile/{{ content[2] }}"><img
+                                    src="{{ url_for('static', filename='images/trash_small.png') }}"
+                                    alt="stop"></a>&nbsp;
+                        </div>
+                    </td>
+                    <td width="25%">
+                        <!-- content[0] is the style element to turn visibility on/off (done in webAppUtils.py) -->
+                        <div id="vid{{ content[2] }}" {{ content[0] }}>
+                            <!-- REPLACE CHANNEL WITH YOUR OWN YOUTUBE CHANNEL ID -->
+                            <iframe width="170" height="96"
+                                src="https://www.youtube.com/embed/live_stream?channel=<CHANNEL_ID>&autoplay=1"
+                                title="YouTube video player" frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media;"
+                                allowfullscreen></iframe>
+                        </div>
+                    </td>
+                </tr>
 
-            {% endfor %}
-        </tbody>
-    </table>
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
+    <!--
+            The backend script returns messages using flash().
+        -->
+    <div class="fromBackEnd">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+
+        {% for message in messages %}
+        {% if "Error" not in message: %}
+        <div class="alert alert-info">
+            {{ message[1] }}
+        </div>
+        {% endif %}
+
+        {% if "Error" in message: %}
+        <div class="alert alert-warning">
+            {{ message[1] }}
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
 </div>
 
 {% endblock %}

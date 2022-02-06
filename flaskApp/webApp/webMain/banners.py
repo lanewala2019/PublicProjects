@@ -4,19 +4,22 @@ import re
 from flask import Flask, render_template, flash, request, g, redirect, url_for
 from wtforms import Form, StringField, TextAreaField, validators, SubmitField
 import time
-from webAppUtils import startSubProcess, stopSubProcess, createBannerFile
+from webAppUtils import startSubProcess, stopSubProcess, createBannerFile, makeAggregateFilesContent
 from webAppUtils import updateBannerPidInfo, resetBannerPidInfo, doesPidExist, anyOtherPidsExist
 from common import * # template names, path names etc. that are common to more than one script
 from flask_oidc import OpenIDConnect
-from okta import UsersClient
+from okta import UsersClient, UserGroupsClient
 
 sys.path.insert(0, "/home/pi/Projects/python/WordDictionary/")
 
 from checkAcceptableWords import checkAcceptableWords
 
 
+# Most constants are defined in common.py
 app=Flask(__name__) #instantiating flask object
 app.config.from_object(__name__)
+
+# Okta is used for authen/author using OpenID Connect
 app.config['SECRET_KEY'] = SECRETKEY
 app.config["OIDC_CLIENT_SECRETS"] = "client_secrets.json" # contains a bunch of configuration options for your unique app
 app.config["OIDC_COOKIE_SECURE"] = False
@@ -25,6 +28,7 @@ app.config["OIDC_SCOPES"] = ["openid", "email", "profile"]
 app.config["OIDC_ID_TOKEN_COOKIE_NAME"] = "oidc_token"
 oidc = OpenIDConnect(app)
 okta_client = UsersClient(OKTADOMAIN, OKTAAUTHTOKEN)
+okta_groups = UserGroupsClient(OKTADOMAIN, OKTAAUTHTOKEN)
 
 
 aggregateFilesContent = []
@@ -32,10 +36,15 @@ aggregateFilesContent = []
 
 class ReusableForm(Form):
 
+	# Okta authenticates/authorizes a client and manages appropriate session information.
+	# Each authenticated user (whether explicitly registered with Okta or through Google)
+	# is associated with a user id.
 	@app.before_request
 	def before_request():
 		if oidc.user_loggedin:
 			g.user = okta_client.get_user(oidc.user_getfield("sub"))
+			#print ("before_request(): g.user.profile.firstName = [", g.user.profile.firstName,"]")
+			#print ("before_request(): g.user.id = [", g.user.id,"]")
 		else:
 			g.user = None
 
@@ -48,17 +57,23 @@ class ReusableForm(Form):
 
 		if form.errors:
 			print ("menus.py: Form errors",form.errors, " method=", request.method)
-
+		
 		return render_template(HOME_TEMPLATE, form=form)
 	
+
+
 	@app.route("/about/", methods=['POST', 'GET'])
 	def about():
 		return render_template(ABOUT_TEMPLATE)
 
 	
+
+	# This manages the creation of a new banner. ONly authenticated users are permitted to create.
+	# That authentication is managed by Pkta and OpenID Connect (the @oidc.require_login)
 	@app.route("/create/", methods=['POST', 'GET'])
 	@oidc.require_login
 	def create():
+		#print("In create(): g.user.id=[", g.user.id,"]")
 		data = None
 		form = ReusableForm(request.form)
 
@@ -68,6 +83,16 @@ class ReusableForm(Form):
 		if request.method == 'POST':
 			data = request.form.get('bannerContent')
 			#print("main.py- data=",data)
+
+			# first element is the user id of the user who created this banner
+			# We'll use that id as part of the filename. Embedding the user id into the
+			# filename will be used to ensure that file deletions can happen only
+			# by the appropriate user.
+
+			uid = data[0:data.index("|")]
+			data = data[data.index("|")+1:]
+			#print("create(): uid=[",uid,"]")
+			#print("create(): data=[",data,"]")
 
 			# check 'data' to ensure acceptable words
 			# 'data' has colors as well, with the first piece the text
@@ -103,7 +128,7 @@ class ReusableForm(Form):
 				#
 				# Once the file has been created, a subprocess will kick off the python script
 				# that manipulates a set of WS2811 LEDs.
-				fileName = "text_"+str(time.time_ns())+".bannertext"
+				fileName = uid+"_"+str(int(time.time()))+".bannertext"
 				filePath = BANNER_PATH+fileName
 				createBannerFile(filePath, data)
 
@@ -119,52 +144,32 @@ class ReusableForm(Form):
 		return render_template(CREATE_TEMPLATE, form=form)
 
 
-
+	# Presents a list of existing banners thayt can be "run" by an authenticated user. Since there
+	# may have been banner files deleted durign this session, the banner-file store is examined to ensure
+	# that the correct list of files is presented
 	@app.route("/banner/", methods=['POST', 'GET'])
 	@oidc.require_login
 	def banner():
 		global aggregateFilesContent
 
-		files = os.listdir(BANNER_PATH)
-		#print("banner: files=", files)
-		if len(aggregateFilesContent) == 0:
-			while files:
-				# Each "row" in the contents array represents a table row rendered in HTML.
-				# To maintain proepr state, certain bits must be preserved across the page rendering.
-				# In order to know what banner is running, its pid must be captured (note the banner
-				# process is a separate sub-process so we need to know ots pid)
-				# Further, rather than clutter up the web page, only the currently-running banner
-				# will have its video element displayed, & so we must capture that cell's visibility state
-				#
-				# After initialization, this array is passed back and forth between the HTML template and
-				# the python scripts.
-				#
-				# When a banner is "run"/"stopped", a couple of functions in webAppUtils.py are used
-				# to set/unset visibility of the video cell (via the contents[] array)
-				content = [] # the content of a specific file in a list
-				content.append("style=visibility:hidden") #initialize video cell visibility
-				content.append("") #placeholder for process pid (when running as a sub-process)
-				file = files.pop()
-				with open(BANNER_PATH+file, "r") as f:
-					txt = f.read()
-				txt = txt.replace('\n', '<br>')
-				# add filename to the list to render (without the .bannertext extension)
-				file1 = file
-				fileStr = file1[:file1.index(".bannertext")]
-				content.append(fileStr) # 3rd element in a list is the filename without the extension
-				# now append the file contents
-				content.append(txt) # gather content of a specific file
-				# finally, append this whole thing as a "row" to be rendered
-				aggregateFilesContent.append(content) # gather content of all files
-		#print("banner(): aggregateFilesContent=***",aggregateFilesContent,"***")
+		form = ReusableForm(request.form)
 
-		return render_template(BANNER_TEMPLATE, filesContent=aggregateFilesContent)
+		aggregateFilesContent = makeAggregateFilesContent()
+		return render_template(BANNER_TEMPLATE, filesContent=aggregateFilesContent, form=form)
 
 	
+
+	# This actually runs a selected banner file. Because of limitations on the use of GPIO
+	# on the Raspberry Pi that controls the WS2811, only one banner can be run at any one time.
+	# The list of banners is examined to ensure that no other banner is being run.
+	# The "aggregateFilesContent" is a structure that maintains the list of banners along with
+	# current state information, i.e., banner running or not.
 	@app.route("/runBanner/<fileName>", methods=['POST','GET'])
 	@oidc.require_login
 	def runBanner(fileName):
 		global aggregateFilesContent
+
+		form = ReusableForm(request.form)
 		
 		# If there is a pid for this, don't do anything, because it means something is already
 		# running for this entry
@@ -176,19 +181,22 @@ class ReusableForm(Form):
 				aggregateFilesContent = updateBannerPidInfo(fileName, str(process.pid), aggregateFilesContent)
 				#print("runBanner(): aggregateFilesContent=***",aggregateFilesContent,"***")
 			else:
-				msg = "Sorry - there is another banner running. Stop that one first."
-				#flash("Sorry - there is another banner running. Stop that one first.")
+				flash("Sorry - there is another banner running. Stop that one first.")
 		else:
-			msg = "Sorry. This banner is already running. You can have only one banner active"
-			#flash("Sorry. This banner is already running. You can have only one banner active")
-		return render_template(BANNER_TEMPLATE, filesContent=aggregateFilesContent)
+			flash("Sorry. This banner is already running. You can have only one banner active")
+		return render_template(BANNER_TEMPLATE, filesContent=aggregateFilesContent, form=form)
 
 	
+
+	# A running banner can be stopped.  A running banner is identified by a process id. A check is made
+	# to ensure that there is a pid present before a stop is effected.
 	@app.route("/stopBanner/", defaults={'pid': None}, methods=['POST','GET'])
 	@app.route("/stopBanner/<pid>/", methods=['POST','GET'])
 	@oidc.require_login
 	def stopBanner(pid):
 		global aggregateFilesContent
+
+		form = ReusableForm(request.form)
 		
 		#print("stopBanner: pid=[", pid, "]")
 		if (pid == None or pid == ''):
@@ -197,24 +205,77 @@ class ReusableForm(Form):
 			stopSubProcess(int(pid))
 			aggregateFilesContent = resetBannerPidInfo(pid, aggregateFilesContent)
 			#print("stopBanner(): aggr=###",aggregateFilesContent,"###")
-		return render_template(BANNER_TEMPLATE, filesContent=aggregateFilesContent)
+		return render_template(BANNER_TEMPLATE, filesContent=aggregateFilesContent, form=form)
 
-	
+
+
+	# A banner file can be deleted, but only by the creator that banner. This is done by using
+	# the current user's user-id (provided through Okta) and matching that against a portion of
+	# the banner filename.
+	@app.route("/deleteBannerFile/<fileName>/", methods=['POST','GET'])
+	@oidc.require_login
+	def deleteBannerFile(fileName):
+		global aggregateFilesContent
+
+		form = ReusableForm(request.form)
+
+		#
+		# deleteBannerFile deletes a banner file if created by the logged-in user. The prefix of the
+		# file is the user-id, and this will be used to determine if that file can be deleted or not.
+		# After deletion, the list "aggregateFilesContent" must be adjusted to remove the file entry
+		# from that list.
+
+		fileCreator = fileName[0:fileName.index("_")]
+		#print("deleteBannerFile(): fileCreator=[",fileCreator,"], g.user.id=[",g.user.id,"]")
+		fileToDelete = fileName+".bannertext"
+		#print("deleteBannerFile(): fileToDelete=[",fileToDelete,"]")
+
+		if fileCreator == g.user.id:
+			cmdToExecute = "sudo rm "+BANNER_PATH+fileToDelete
+			os.system(cmdToExecute)
+
+			# Re-do the banner files list
+			aggregateFilesContent = makeAggregateFilesContent()
+
+			flash("The banner "+fileName+" has been deleted.")
+		else:
+			flash("Sorry. The banner "+fileName+" was not created by you, and cannot be deleted.")
+			
+		return render_template(BANNER_TEMPLATE, filesContent=aggregateFilesContent, form=form)
+
+
+
 	@app.route("/contact/", methods=['POST', 'GET'])
 	def contact():
 		return render_template(CONTACT_TEMPLATE)
 
+
+	# Standard usage of Okta with Flask... The commented-out stuff is there just for any additional
+	# information that one light wish to examine.
 	@app.route("/login")
 	@oidc.require_login
 	def login():
+		#users = okta_client.get_users()
+		#print("/login: user Info=[", users, "]")
+		#usr1 = users[0]
+		#usr2 = users[1]
+		#print("/login: user 1=[", dir(usr1.profile),"]")
+		#print("/login: user 2=[", dir(usr2),"]")
+		#groups = okta_groups.get_groups()
+		#print("/login: group Info=[", dir(groups), "]")
 		return redirect(url_for("home"))
 
+
+	# Standard Okta/Flask artifact.  Note that logging-out deosn't eliminate your session
+	# information right away. SO if you log back in again, Okta will validate your session
+	# info and return an OK, which will take you right back to the app's home page.
 	@app.route("/logout")
 	def logout():
 		oidc.logout()
 		return redirect(url_for("home"))
 
 
+# APP_PORT is defined in common.py
 if __name__ == "__main__":
-    app.run (host='0.0.0.0', port='5001')
+    app.run (host='0.0.0.0', port=APP_PORT)
 

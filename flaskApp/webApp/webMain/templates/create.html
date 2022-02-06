@@ -3,6 +3,8 @@
 {% block head %}
 {{ super() }}
 <script type="text/javascript">
+    var usr = "{{ g.user.id }}"; // to be used to create the filename
+
     // "tblHdr" is used to generate the desired table dynamically. We use the size
     // of "tblHdr" to determine the number of table columns needed.
     var tblHdr = new Array();
@@ -87,6 +89,8 @@
         var tblData = new Array();
         var output;
 
+        //console.log("submitTbl(): usr=" + usr);
+
         //console.log("sizeof txtTbl=" + myTab.rows.length);
 
         // loop through each row of the table.
@@ -100,7 +104,9 @@
 
         // Data to be sent to backend (generated based on table inputs); tbl col separator is "|"
         var outd = document.getElementById('bannerContent');
-        outd.value = tblData.join("|");
+        outd.value = usr + "|" + tblData.join("|"); // add user-id in front of the table data & returbn to python
+        //outd.value = tblData.join("|");
+        //console.log("submitTbl(): outd=[", outd, "]");
         var form = document.getElementById('form');
         form.submit();
         //console.log("====================================");

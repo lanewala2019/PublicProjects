@@ -1,0 +1,9 @@
+
+autostart the ffmpeg bat script as well as the banner.py script so it initiates on server restart
+
+On each push to Published state, the following items must be examined to make sure no sensitive data is exposed:
+- banner.html: make sure Youtube channel ID is replacede with a string <CHANNELID>
+- client_secrets.json: make sure all sensitive info is replaced with placeholder strings
+- startYouTubeStream.bat: don't include it in Published
+- common.py: replace ALL sensitive data with placeholder strings
+
