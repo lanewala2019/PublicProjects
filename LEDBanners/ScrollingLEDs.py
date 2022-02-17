@@ -198,6 +198,19 @@ def populateCells(banner):
 		splitText = list(text)
 		logger.log(logging.DEBUG, "populateCells: splitText={}".format(splitText))
 
+		#
+		# Before first character in banner, configure two columns of "background";
+		# makes things look a bit better
+		cellsRow = 0
+		for rows in range (0, MAXCELLSROW,1):
+			for extraCols in range (cellsCol, cellsCol+2, 1):
+				idx = extraCols*MAXCELLSROW + rows
+				cells[idx] = (cell(1, colorStrToInt(bkgrndColor), bkgrndBrightness, idx))
+				logger.log(logging.DEBUG, " before char, extra background cell, cell={}".format(cells[idx])) 
+		cellsCol += 2
+		logger.log(logging.DEBUG, "beginning of first banner char, spacers added; cellsCol={}".format(cellsCol))
+
+		# Process each character in the banner text
 		for i in splitText:
 			logger.log(logging.DEBUG, "In populateCells: processing ch=[{}]".format(i))
 
@@ -222,8 +235,9 @@ def populateCells(banner):
 						cells[idx] = (cell(2, getRandomColor(0,10,0,10,0,10), 0, idx))
 						logger.log(logging.DEBUG, " blink ON, cell={}".format(cells[idx])) 
 					else:
-						cells[idx] = (cell(0, colorStrToInt(bkgrndColor), bkgrndBrightness, idx))
-						logger.log(logging.DEBUG, " blink OFF, no text, cell={}".format(cells[idx])) 
+						# any other LED is a "background" LED
+						cells[idx] = (cell(1, colorStrToInt(bkgrndColor), bkgrndBrightness, idx))
+						logger.log(logging.DEBUG, " background cell, blink OFF, no text, cell={}".format(cells[idx])) 
 					# move down the column to the next row
 					cellsRow += 1
 					logger.log(logging.DEBUG, " ")
@@ -232,10 +246,16 @@ def populateCells(banner):
 				cellsCol += 1
 			logger.log(logging.DEBUG, "end of char: {}, cellsCol={}".format(i, cellsCol))
 			#
-			# Skip 2 columns in 'cells' to provide spacing between characters
-			# TODO: 2 columns must be either off or random on
+			# End of character. Provide "sopacing" before next character:
+			# Skip 2 columns in 'cells' to provide spacing between characters, but set the
+			# "background" color of the cells for these columns
+			cellsRow = 0
+			for rows in range (0, MAXCELLSROW,1):
+				for extraCols in range (cellsCol, cellsCol+2, 1):
+					idx = extraCols*MAXCELLSROW + rows
+					cells[idx] = (cell(1, colorStrToInt(bkgrndColor), bkgrndBrightness, idx))
+					logger.log(logging.DEBUG, " extra background cell, cell={}".format(cells[idx])) 
 			cellsCol += 2
-			debugStr = "end of char:", i, " and spacer added; cellsCol=", cellsCol
 			logger.log(logging.DEBUG, "end of char:{} and spacer added; cellsCol={}".format(i,cellsCol))
 		#
 		# end of current line of text; if more lines, add more empty cells
@@ -394,9 +414,7 @@ def printRightPixels():
 		logger.log(logging.DEBUG, "pixels[{}]={}".format(idx, pixels[idx]))
 
 
-# ****************************************************************************************
 """ MAIN """
-# ****************************************************************************************
 def main(argv):
 	global cells, currCellsIndex, cellsUsed
 	global MAXPIXELSROW, MAXPIXELSCOL
